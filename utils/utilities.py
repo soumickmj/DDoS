@@ -253,10 +253,12 @@ def convert_image(img, source, target):
 
 
 class ResSaver():
-    def __init__(self, out_path, save_inp=False, do_norm=False):
+    def __init__(self, out_path, save_inp=False, save_out=True, analyse_out=True, do_norm=False):
         self.out_path = out_path
         self.save_inp = save_inp
         self.do_norm = do_norm
+        self.save_out = save_out
+        self.analyse_out = analyse_out
 
     def CalcNSave(self, out, inp, gt, outfolder, already_numpy=False):
         outpath = os.path.join(self.out_path, outfolder)
@@ -265,7 +267,9 @@ class ResSaver():
         if not already_numpy:
             inp = inp.numpy()
             out = out.numpy()
-        SaveNIFTI(out, os.path.join(outpath, "out.nii.gz"))
+
+        if self.save_out:
+            SaveNIFTI(out, os.path.join(outpath, "out.nii.gz"))
 
         if self.save_inp:            
             SaveNIFTI(inp, os.path.join(outpath, "inp.nii.gz"))
@@ -274,13 +278,16 @@ class ResSaver():
             if not already_numpy:           
                 gt = gt.numpy()
 
-            if self.do_norm:
-                out = convert_image(out, source='[-1, 1]', target='[0, 1]') #out/out.max()
+            if self.do_norm:                
                 inp = convert_image(inp, source='[-1, 1]', target='[0, 1]') #inp/inp.max()
                 gt = convert_image(gt, source='[-1, 1]', target='[0, 1]') #gt/gt.max()
 
-            out_metrics, out_ssimMAP = calc_metircs(gt, out, tag="Out")
-            SaveNIFTI(out_ssimMAP, os.path.join(outpath, "ssimMAPOut.nii.gz"))
+            if self.analyse_out:
+                out = convert_image(out, source='[-1, 1]', target='[0, 1]') #out/out.max()
+                out_metrics, out_ssimMAP = calc_metircs(gt, out, tag="Out")
+                SaveNIFTI(out_ssimMAP, os.path.join(outpath, "ssimMAPOut.nii.gz"))
+            else:
+                out_metrics = {}
 
             inp_metrics, inp_ssimMAP = calc_metircs(gt, inp, tag="Inp")
             SaveNIFTI(inp_ssimMAP, os.path.join(outpath, "ssimMAPInp.nii.gz"))
