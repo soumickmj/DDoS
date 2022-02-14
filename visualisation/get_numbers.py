@@ -4,11 +4,16 @@ from tqdm import tqdm
 import os
 from scipy.stats import mannwhitneyu
 
-#Step 2 of 3
+#Step 3 of 4
 
-# consolidated_csv = "/mnt/MEMoRIAL/MEMoRIAL_SharedStorage_M1.2+4+7/Chompunuch/PhD/Results/DDoS_Paper1/dynDualChn/DDoS-UNet/FullVol/Results/consolidated.csv"
-consolidated_csv = "/mnt/MEMoRIAL/MEMoRIAL_SharedStorage_M1.2+4+7/Chompunuch/PhD/Results/DDoS_Paper1/dynDualChn/DDoS-UNet/FullVol/ZPad/Results/consolidated_baseNonDyn.csv"
+ignore_antipasto = True
+consolidated_csv = "/mnt/MEMoRIAL/MEMoRIAL_SharedStorage_M1.2+4+7/Chompunuch/PhD/Results/DDoS_Paper1/dynDualChn/DDoS-UNet/FullVol/woZPad/Results/QuantitativeAnalysis/Sources/consolidated.csv"
+# consolidated_csv = "/mnt/MEMoRIAL/MEMoRIAL_SharedStorage_M1.2+4+7/Chompunuch/PhD/Results/DDoS_Paper1/dynDualChn/DDoS-UNet/FullVol/ZPad/Results/consolidated_baseNonDyn.csv"
 df = pd.read_csv(consolidated_csv)
+
+if ignore_antipasto:
+    df = df[~df.file.str.contains("TP01")]
+
 target_df = df[df.model=="DDoS"]
 
 def getStrings(mean, median, std, metric):    
@@ -68,17 +73,17 @@ def getP(model_df, target_df, metric, metric_type="Out"):
         return "-1"
 
 #Model-wise undersampling scores
-with open(f"{os.path.dirname(consolidated_csv)}/scores_model_undersampling.txt","w") as file_obj:
-    m0 = df.model.unique()[0]
-    model_df = df[df.model == m0]
-    writeSubDF(model_df, target_df, file_obj, "Trilinear", "undersampling", metric_type="Inp")
+with open(f"{os.path.dirname(consolidated_csv)}/scores_model_undersampling{('_noAP' if ignore_antipasto else '')}.txt","w") as file_obj:
+    # m0 = df.model.unique()[0]
+    # model_df = df[df.model == m0]
+    # writeSubDF(model_df, target_df, file_obj, "Trilinear", "undersampling", metric_type="Inp")
 
     for m in df.model.unique():
         model_df = df[df.model == m]
         writeSubDF(model_df, target_df, file_obj, m, "undersampling", metric_type="Out")
 
 #Subject Model-wise undersampling scores
-with open(f"{os.path.dirname(consolidated_csv)}/scores_subject_model_undersampling.txt","w") as file_obj:
+with open(f"{os.path.dirname(consolidated_csv)}/scores_subject_model_undersampling{('_noAP' if ignore_antipasto else '')}.txt","w") as file_obj:
     for s in df.subject.unique():
         sub_df = df[df.subject == s]
         sub_target_df = target_df[target_df.subject == s]
@@ -89,9 +94,9 @@ with open(f"{os.path.dirname(consolidated_csv)}/scores_subject_model_undersampli
         file_obj.write("\n§§§§§§§§§§§§§§§§§§§§§§§§§§§§\n")
         file_obj.write("\n")
 
-        m0 = sub_df.model.unique()[0]
-        model_df = sub_df[sub_df.model == m0]
-        writeSubDF(model_df, sub_target_df, file_obj, "Trilinear", "undersampling", metric_type="Inp")
+        # m0 = sub_df.model.unique()[0]
+        # model_df = sub_df[sub_df.model == m0]
+        # writeSubDF(model_df, sub_target_df, file_obj, "Trilinear", "undersampling", metric_type="Inp")
 
         for m in sub_df.model.unique():
             model_df = sub_df[sub_df.model == m]
