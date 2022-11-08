@@ -32,17 +32,16 @@ class ThisNewNet(nn.Module):
 
         if gt is None or self.loss_func is None:
             return output
+        if self.sliceup_first:
+            loss = self.loss_func(output, gt)
         else:
-            if self.sliceup_first:
-                loss = self.loss_func(output, gt)
-            else:
-                in_plane_loss = self.loss_func(up_images, gt[:,:,::self.scale_factor[0],...]) #unet loss
-                slice_aux_loss = self.loss_func(aux_out, gt) #aux srcnn loss
-                slice_main_loss = self.loss_func(output, gt) #srcnn loss
-                loss = slice_main_loss
-                if self.loss_inplane:
-                    loss += in_plane_loss
-                if self.loss_slice_count > 1:
-                    loss += slice_aux_loss
-                # loss = in_plane_loss + slice_aux_loss + slice_main_loss        
-            return output, loss
+            in_plane_loss = self.loss_func(up_images, gt[:,:,::self.scale_factor[0],...]) #unet loss
+            slice_aux_loss = self.loss_func(aux_out, gt) #aux srcnn loss
+            slice_main_loss = self.loss_func(output, gt) #srcnn loss
+            loss = slice_main_loss
+            if self.loss_inplane:
+                loss += in_plane_loss
+            if self.loss_slice_count > 1:
+                loss += slice_aux_loss
+            # loss = in_plane_loss + slice_aux_loss + slice_main_loss        
+        return output, loss

@@ -32,8 +32,7 @@ class MixtureOfGaussians(Prior):
         """ Element-wise application reparameterization trick to sample from Gaussian
         """
         sample = torch.randn(m.shape).to(args.device)
-        z = m + (v**0.5)*sample
-        return z
+        return m + (v**0.5)*sample
 
     def log_sum_exp(self, x, dim=0):
         """ Compute the log(sum(exp(x), dim)) in a numerically stable manner
@@ -56,16 +55,14 @@ class MixtureOfGaussians(Prior):
         log_det = -0.5 * torch.sum(torch.log(v), dim = -1)
         log_exp = -0.5 * torch.sum((x - m)**2/v, dim = -1)
 
-        log_prob = const + log_det + log_exp
-        return log_prob
+        return const + log_det + log_exp
 
     def log_normal_mixture(self, z, m, v):
         """ Computes log probability of a uniformly-weighted Gaussian mixture.
         """
         z = z.view(z.shape[0], 1, -1)
         log_probs = self.log_normal(z, m, v)
-        log_prob = self.log_mean_exp(log_probs, 1)
-        return log_prob
+        return self.log_mean_exp(log_probs, 1)
 
     def gaussian_parameters(self, h, dim=-1):
         m, h = torch.split(h, h.size(dim) // 2, dim=dim)
@@ -87,12 +84,9 @@ class MixtureOfGaussians(Prior):
         Computes the mixture of Gaussian prior
         """
         m, v  = self.gaussian_parameters(self.z_pre, dim=1)
-        log_p_z = self.log_normal_mixture(z, m, v)
-        return log_p_z
+        return self.log_normal_mixture(z, m, v)
 
     def __str__(self):
       return "MixtureOfGaussians"
 
 
-if __name__ == "__main__":
-    pass

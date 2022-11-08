@@ -79,8 +79,7 @@ class CustomRandomMotion(RandomMotion):
             arguments['translation'][name] = translation_params
             arguments['image_interpolation'][name] = self.image_interpolation
         transform = CustomMotion(noise_dir=self.noise_dir,**self.add_include_exclude(arguments))
-        transformed = transform(subject)
-        return transformed
+        return transform(subject)
 
 class RealityMotion():
     def __init__(self, n_threads = 4, mu = 0, sigma = 0.1, random_sigma=True):

@@ -23,8 +23,13 @@ path_GT = "/project/schatter/Chimp/Data/hrCHAOS"
 outpath_interpNorm = "/project/schatter/Chimp/Data/usCHAOSWoT2/Center6p25MaskWoPad_Tri_Norm"
 outpath_GTNorm = "/project/schatter/Chimp/Data/hrCHAOS_Norm"
 
-files = glob(path_woZPad+"/**/*.nii", recursive=True) + glob(path_woZPad+"/**/*.nii.gz", recursive=True)
-files_gt = glob(path_GT+"/**/*.nii", recursive=True) + glob(path_GT+"/**/*.nii.gz", recursive=True)
+files = glob(f"{path_woZPad}/**/*.nii", recursive=True) + glob(
+    f"{path_woZPad}/**/*.nii.gz", recursive=True
+)
+
+files_gt = glob(f"{path_GT}/**/*.nii", recursive=True) + glob(
+    f"{path_GT}/**/*.nii.gz", recursive=True
+)
 
 def SaveNIFTI(data, path):
     os.makedirs(os.path.split(path)[0], exist_ok=True)

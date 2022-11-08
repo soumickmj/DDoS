@@ -22,9 +22,11 @@ for f in glob(f"{csv_root}/RAWs/*.csv"):
     df.subject = subID
     df.model = model
 
-    newcols = {}
-    for c in [c for c in df.columns if "ZPad" in c]:
-        newcols[c] = c.split("ZPad")[0]+"Out"
+    newcols = {
+        c: c.split("ZPad")[0] + "Out"
+        for c in [c for c in df.columns if "ZPad" in c]
+    }
+
     df.rename(columns=newcols, inplace=True)
     df.undersampling = df.undersampling.str.replace("WoPadWoPad", "WoPad")
     df.drop(df[df.undersampling == "Center4Mask2WoPad"].index, inplace=True)

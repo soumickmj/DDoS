@@ -59,7 +59,7 @@ class _DenseBlock(nn.Sequential):
         for i in range(num_layers):
             layer = _DenseLayer(num_input_features + i * growth_rate,
                                 growth_rate, bn_size, drop_rate)
-            self.add_module('denselayer{}'.format(i + 1), layer)
+            self.add_module(f'denselayer{i + 1}', layer)
 
 
 class _Transition(nn.Sequential):
@@ -128,24 +128,24 @@ class DenseNet(nn.Module):
                                 bn_size=bn_size,
                                 growth_rate=growth_rate,
                                 drop_rate=drop_rate)
-            self.model.add_module('denseblock{}'.format(i + 1), block)
+            self.model.add_module(f'denseblock{i + 1}', block)
             num_features = num_features + num_layers * growth_rate
             if i != len(block_config) - 1:
                 trans = _Transition(num_input_features=num_features,
                                     num_output_features=num_features // 2, no_pool=no_pool)
-                self.model.add_module('transition{}'.format(i + 1), trans)
+                self.model.add_module(f'transition{i + 1}', trans)
                 num_features = num_features // 2
 
         # Final batch norm
         self.model.add_module('norm5', nn.BatchNorm3d(num_features))
-    
+
         # Final fully connected layer
         self.model.add_module('finconv', nn.Conv3d(num_features, num_classes, kernel_size=1, stride=1, padding=0))
 
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
                 m.weight = nn.init.kaiming_normal_(m.weight, mode='fan_out')
-            elif isinstance(m, nn.BatchNorm3d) or isinstance(m, nn.BatchNorm2d):
+            elif isinstance(m, (nn.BatchNorm3d, nn.BatchNorm2d)):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 

@@ -59,7 +59,7 @@ class SRCNN3Dv3(nn.Module):
         output_4 = self.conv_4(output_3)
         output_5a = self.conv_5(output_4)
         output_5 = torch.add(output_1, output_5a)
-        
+
         output_6 = output_5
         mod_ind = 0
         for i in range(len(self.scale_factor)):
@@ -72,7 +72,7 @@ class SRCNN3Dv3(nn.Module):
                 if i+1 < len(self.scale_factor):
                     output_6 = self.conv_6s_post[mod_ind](output_6)
                 mod_ind += 1
-        
+
         output_7 = self.conv_7(output_6)
         output_8 = self.conv_8(output_7)
         output_9a = self.conv_9(output_8)
