@@ -54,23 +54,29 @@ class Interpolator():
             return F.interpolate(images, size=out_shape, mode=self.mode)
 
 def tensorboard_images(writer, inputs, outputs, targets, epoch, section='train'):
-    writer.add_image('{}/output'.format(section),
-                     vutils.make_grid(outputs[0, 0, ...],
-                                      normalize=True,
-                                      scale_each=True),
-                     epoch)
+    writer.add_image(
+        f'{section}/output',
+        vutils.make_grid(outputs[0, 0, ...], normalize=True, scale_each=True),
+        epoch,
+    )
+
     if inputs is not None:
-        writer.add_image('{}/input'.format(section),
-                        vutils.make_grid(inputs[0, 0, ...],
-                                        normalize=True,
-                                        scale_each=True),
-                        epoch)
+        writer.add_image(
+            f'{section}/input',
+            vutils.make_grid(
+                inputs[0, 0, ...], normalize=True, scale_each=True
+            ),
+            epoch,
+        )
+
     if targets is not None:
-        writer.add_image('{}/target'.format(section),
-                        vutils.make_grid(targets[0, 0, ...],
-                                        normalize=True,
-                                        scale_each=True),
-                        epoch)
+        writer.add_image(
+            f'{section}/target',
+            vutils.make_grid(
+                targets[0, 0, ...], normalize=True, scale_each=True
+            ),
+            epoch,
+        )
 
 def SaveNIFTI(data, file_path):
     """Save a NIFTI file using given file path from an array
@@ -155,7 +161,7 @@ def process_valBatch(batch):
     for i in range(len(batch['tag'])):
         gt_flag.append(True)
         batch_tag = batch['tag'][i]
-        if batch_tag == "CorruptNGT" or batch_tag == "GTOnly":
+        if batch_tag in ["CorruptNGT", "GTOnly"]:
             inp.append(batch['inp'][tio.DATA][i,...])
             gt.append(batch['gt'][tio.DATA][i,...])
         elif batch_tag == "FlyCorrupt":
@@ -179,8 +185,13 @@ def getSSIM(gt, out, gt_flag=None, data_range=1):
     for i in range(gt.shape[0]):
         if not bool(gt_flag[i]):
             continue
-        for j in range(gt.shape[1]):
-            vals.append(structural_similarity(gt[i,j,...], out[i,j,...], data_range=data_range))
+        vals.extend(
+            structural_similarity(
+                gt[i, j, ...], out[i, j, ...], data_range=data_range
+            )
+            for j in range(gt.shape[1])
+        )
+
     return median(vals)
 
 def calc_metircs(gt, out, tag):
@@ -189,11 +200,12 @@ def calc_metircs(gt, out, tag):
     psnr = peak_signal_noise_ratio(gt, out, data_range=1)
     uqi = UQICalc(gt, out)
     metrics = {
-        "SSIM"+tag: ssim, 
-        "NRMSE"+tag: nrmse, 
-        "PSNR"+tag: psnr, 
-        "UQI"+tag: uqi
+        f"SSIM{tag}": ssim,
+        f"NRMSE{tag}": nrmse,
+        f"PSNR{tag}": psnr,
+        f"UQI{tag}": uqi,
     }
+
     return metrics, ssimMAP
 
 def MinMax(data):
@@ -210,9 +222,21 @@ def convert_image(img, source, target):
                    'y-channel' (luminance channel Y in the YCbCr color format, used to calculate PSNR and SSIM)
     :return: converted image
     """
-    assert source in {'pil', '[0, 1]', '[-1, 1]'}, "Cannot convert from source format %s!" % source
-    assert target in {'pil', '[0, 255]', '[0, 1]', '[-1, 1]', 'imagenet-norm',
-                      'y-channel'}, "Cannot convert to target format %s!" % target
+    assert source in {
+        'pil',
+        '[0, 1]',
+        '[-1, 1]',
+    }, f"Cannot convert from source format {source}!"
+
+    assert target in {
+        'pil',
+        '[0, 255]',
+        '[0, 1]',
+        '[-1, 1]',
+        'imagenet-norm',
+        'y-channel',
+    }, f"Cannot convert to target format {target}!"
+
 
     # Convert from source to [0, 1]
     if source == 'pil':
@@ -292,8 +316,7 @@ class ResSaver():
             inp_metrics, inp_ssimMAP = calc_metircs(gt, inp, tag="Inp")
             SaveNIFTI(inp_ssimMAP, os.path.join(outpath, "ssimMAPInp.nii.gz"))
 
-            metrics = {**out_metrics, **inp_metrics}
-            return metrics
+            return {**out_metrics, **inp_metrics}
 
 
 #The WnB functions are here, but not been tested (even not finished)
@@ -304,16 +327,16 @@ def WnB_ArtefactLog_DS(run, datasets, meta={}, names = ["training", "validation"
                                 metadata={"sizes": [len(dataset) for dataset in datasets], **meta})
 
     for name, dataset in zip(names, datasets):
-        with raw_data.new_file(name + ".npz", mode="wb") as file:
+        with raw_data.new_file(f"{name}.npz", mode="wb") as file:
             np.savez(file, ds=dataset)
         run.log_artifact(raw_data)
 
 def WnB_ReadArtefact_DS(run, tag="latest", names = ["training", "validation", "test"]):
-    raw_data_artifact = run.use_artifact('DSSplit:'+tag)
+    raw_data_artifact = run.use_artifact(f'DSSplit:{tag}')
     raw_dataset = raw_data_artifact.download()
     datasets = []
     for split in names:
-        raw_split = np.load(os.path.join(raw_dataset, split + ".npz"))['ds']
+        raw_split = np.load(os.path.join(raw_dataset, f"{split}.npz"))['ds']
         datasets.append(raw_split)
     return datasets
 
@@ -328,7 +351,7 @@ def WnB_ArtefactLog_Model(run, model, config, description="MyModel"):
     run.log_artifact(model_artifact)
 
 def WnB_ReadArtefact_Model(run, tag="latest"):
-    model_artifact = run.use_artifact('Model:'+tag)
+    model_artifact = run.use_artifact(f'Model:{tag}')
     model_dir = model_artifact.download()
     model_path = os.path.join(model_dir, "initialized_model.keras")
     model = keras.models.load_model(model_path)

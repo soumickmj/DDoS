@@ -9,7 +9,7 @@ def get_norm_layer(norm_type='instance'):
     elif norm_type == 'instance':
         return functools.partial(nn.InstanceNorm2d, affine=False)
     else:
-        raise NotImplementedError('Invalid normalization type: {}'.format(norm_type))
+        raise NotImplementedError(f'Invalid normalization type: {norm_type}')
 
 
 def get_param_groups(net, weight_decay, norm_suffix='weight_g', verbose=False):
@@ -36,8 +36,8 @@ def get_param_groups(net, weight_decay, norm_suffix='weight_g', verbose=False):
                     {'name': 'unnormalized', 'params': unnorm_params}]
 
     if verbose:
-        print('{} normalized parameters'.format(len(norm_params)))
-        print('{} unnormalized parameters'.format(len(unnorm_params)))
+        print(f'{len(norm_params)} normalized parameters')
+        print(f'{len(unnorm_params)} unnormalized parameters')
 
     return param_groups
 
