@@ -14,10 +14,8 @@ __status__ = "Production"
 class UNetConvBlock(nn.Module):
     def __init__(self, in_size, out_size, padding, batch_norm):
         super(UNetConvBlock, self).__init__()
-        block = []
+        block = [layer_conv(in_size, out_size, kernel_size=3, padding=int(padding))]
 
-        block.append(layer_conv(in_size, out_size, kernel_size=3,
-                               padding=int(padding)))
         block.append(nn.ReLU())
         if batch_norm:
             block.append(layer_batchnorm(out_size))
@@ -31,8 +29,7 @@ class UNetConvBlock(nn.Module):
         self.block = nn.Sequential(*block)
 
     def forward(self, x):
-        out = self.block(x)
-        return out
+        return self.block(x)
 
 
 class UNetUpBlock(nn.Module):
@@ -162,10 +159,7 @@ class UNet(nn.Module):
                 x = up(x, blocks[-i-1])
             x = self.last(x)
 
-        if self.returnBlocks and self.do_down:
-            return x, blocks
-        else:
-            return x
+        return (x, blocks) if self.returnBlocks and self.do_down else x
 
 if __name__ == '__main__':
     print('#### Test Case ###')

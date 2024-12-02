@@ -19,5 +19,3 @@ class Prior(nn.Module):
         raise NotImplementedError
 
 
-if __name__ == "__main__":
-    pass

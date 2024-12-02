@@ -56,11 +56,7 @@ class UNetMSS(nn.Module):
                                                 padding, batch_norm))
             prev_channels = 2**(wf+i)
 
-        if mss_fromlatent:
-            mss_features = [prev_channels]
-        else:
-            mss_features = []
-
+        mss_features = [prev_channels] if mss_fromlatent else []
         self.up_path = nn.ModuleList()
         for i in reversed(range(depth - 1)):
             self.up_path.append(UNetUpBlock(prev_channels, 2**(wf+i), up_mode,
@@ -70,8 +66,12 @@ class UNetMSS(nn.Module):
 
         self.last = nn.Conv3d(prev_channels, n_classes, kernel_size=1)
 
-        mss_features += up_out_features[len(up_out_features)-1-mss_level if not mss_fromlatent 
-                                                                        else len(up_out_features)-1-mss_level+1:-1]
+        mss_features += up_out_features[
+            len(up_out_features) - 1 - mss_level + 1
+            if mss_fromlatent
+            else len(up_out_features) - 1 - mss_level : -1
+        ]
+
 
         self.mss_level = mss_level
         self.mss_up = mss_up
@@ -83,14 +83,11 @@ class UNetMSS(nn.Module):
         if self.mss_level == 1:
             self.mss_coeff = [0.5]
         else:
-            lmbda = []
-            for i in range(self.mss_level-1, -1, -1):
-                lmbda.append(2**i)
+            lmbda = [2**i for i in range(self.mss_level-1, -1, -1)]
             self.mss_coeff = []
             fact = 1.0 / sum(lmbda)
-            for i in range(self.mss_level-1):
-                self.mss_coeff.append(fact*lmbda[i])
-            self.mss_coeff.append(1.0 - sum(self.mss_coeff))          
+            self.mss_coeff.extend(fact*lmbda[i] for i in range(self.mss_level-1))
+            self.mss_coeff.append(1.0 - sum(self.mss_coeff))
             self.mss_coeff.reverse()
 
 
@@ -102,35 +99,37 @@ class UNetMSS(nn.Module):
                 blocks.append(x)
                 x = F.avg_pool3d(x, 2)
         x = self.dropout(x)
-            
-        if self.mss_fromlatent:
-            mss = [x]
-        else:
-            mss = []
 
+        mss = [x] if self.mss_fromlatent else []
         for i, up in enumerate(self.up_path):
             x = up(x, blocks[-i-1])
-            if self.training and ((len(self.up_path)-1-i <= self.mss_level) and not(i+1 == len(self.up_path))):
+            if (
+                self.training
+                and len(self.up_path) - 1 - i <= self.mss_level
+                and i + 1 != len(self.up_path)
+            ):
                 mss.append(x)
 
-        if self.training:
-            for i in range(len(mss)):
-                if not self.mss_interpb4:
-                    mss[i] = F.interpolate(self.mss_convs[i](mss[i]), size=x.shape[2:], mode=self.mss_up) 
-                else:
-                    mss[i] = self.mss_convs[i](F.interpolate(mss[i], size=x.shape[2:], mode=self.mss_up)) 
-            
-            return self.last(x), mss
-        else:
+        if not self.training:
             return self.last(x)
+        for i in range(len(mss)):
+            mss[i] = (
+                self.mss_convs[i](
+                    F.interpolate(mss[i], size=x.shape[2:], mode=self.mss_up)
+                )
+                if self.mss_interpb4
+                else F.interpolate(
+                    self.mss_convs[i](mss[i]), size=x.shape[2:], mode=self.mss_up
+                )
+            )
+
+        return self.last(x), mss
 
 class UNetConvBlock(nn.Module):
     def __init__(self, in_size, out_size, padding, batch_norm):
         super(UNetConvBlock, self).__init__()
-        block = []
+        block = [nn.Conv3d(in_size, out_size, kernel_size=3, padding=int(padding))]
 
-        block.append(nn.Conv3d(in_size, out_size, kernel_size=3,
-                               padding=int(padding)))
         block.append(nn.ReLU())
         if batch_norm:
             block.append(nn.BatchNorm3d(out_size))
@@ -144,8 +143,7 @@ class UNetConvBlock(nn.Module):
         self.block = nn.Sequential(*block)
 
     def forward(self, x):
-        out = self.block(x)
-        return out
+        return self.block(x)
 
 
 class UNetUpBlock(nn.Module):

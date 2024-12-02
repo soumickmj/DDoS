@@ -54,24 +54,11 @@ class RealNVP(nn.Module):
         """ returns the log likelihood.
         """
         z, sldj = self.forward(x, reverse=False)
-        ll = (self.prior.log_p(z) + sldj)
-
-
-        # prior_ll = -0.5 * (z ** 2 + np.log(2 * np.pi))
-        # prior_ll = prior_ll.flatten(1).sum(-1) - np.log(2**self.nbits) * np.prod(z.size()[1:])
-        # ll = prior_ll + sldj
-        # ll = ll.mean()
-
-        return ll
+        return (self.prior.log_p(z) + sldj)
 
 
     def forward(self, x, reverse=False):
-        sldj = None
-        if not reverse:
-            sldj = 0    # we do not quintize !
-            #  quintize !
-            # x = (x * (2**self.nbits - 1) + torch.rand_like(x)) / (2**self.nbits)
-
+        sldj = None if reverse else 0
         x, sldj = self.flows(x, sldj, reverse)
         return x, sldj
 

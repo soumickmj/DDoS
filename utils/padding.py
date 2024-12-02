@@ -38,8 +38,7 @@ class ReflectionPad3d(nn.Module):
         return ReflectionPadNd.apply(input, self.padding)
 
     def __repr__(self) -> str:
-        return self.__class__.__name__ + '(' \
-            + str(self.padding) + ')'
+        return f'{self.__class__.__name__}({str(self.padding)})'
 
 
 class ReflectionPadNd(Function):
@@ -55,16 +54,17 @@ class ReflectionPadNd(Function):
         ctx.pad = pad
         ctx.input_size = input.size()
         ctx.l_inp = len(input.size())
-        ctx.pad_tup = tuple([(a, b)
-                             for a, b in zip(pad[:-1:2], pad[1::2])]
-                            [::-1])
+        ctx.pad_tup = tuple(list(zip(pad[:-1:2], pad[1::2]))[::-1])
         ctx.l_pad = len(ctx.pad_tup)
         ctx.l_diff = ctx.l_inp - ctx.l_pad
         assert ctx.l_inp >= ctx.l_pad
 
-        new_dim = tuple([sum((d,) + ctx.pad_tup[i])
-                         for i, d in enumerate(input.size()[-ctx.l_pad:])])
-        assert all([d > 0 for d in new_dim]), 'input is too small'
+        new_dim = tuple(
+            sum((d,) + ctx.pad_tup[i])
+            for i, d in enumerate(input.size()[-ctx.l_pad :])
+        )
+
+        assert all(d > 0 for d in new_dim), 'input is too small'
 
         # Create output tensor by concatenating with reflected chunks.
         output = input.new(input.size()[:(ctx.l_diff)] + new_dim).zero_()

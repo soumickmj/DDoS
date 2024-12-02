@@ -39,10 +39,10 @@ class BrokenConvNd(nn.Module):
         return split_tensor_list
 
     def _cat_tensorlist(self, split_tensor_list, n_split, dim):
-        tensor_list = []
-        for i in range(0,len(split_tensor_list),n_split):
-            tensor_list.append(torch.cat(split_tensor_list[i:i+n_split], dim=dim+2))
-        return tensor_list
+        return [
+            torch.cat(split_tensor_list[i : i + n_split], dim=dim + 2)
+            for i in range(0, len(split_tensor_list), n_split)
+        ]
 
     def forward(self, x):
         # dim = x.shape[2:]
@@ -51,9 +51,7 @@ class BrokenConvNd(nn.Module):
         for d in range(len(self.div_dim)):
             # x = self._split_tensorlist(x, split_size_or_sections=int(dim_size[d]), dim=d)
             x = self._chunk_tensorlist(x, n_chunks=int(self.div_dim[d]), dim=d)
-        res = []
-        for i in range(self.n_conv):
-            res.append(self.alphas[i] * self.convs[i](x[i]))
+        res = [self.alphas[i] * self.convs[i](x[i]) for i in range(self.n_conv)]
         for d in range(len(self.div_dim)-1,-1,-1):
             res = self._cat_tensorlist(res, n_split=int(self.div_dim[d]), dim=d)
         return res[0]

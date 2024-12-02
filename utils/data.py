@@ -20,41 +20,55 @@ __email__ = "soumick.chatterjee@ovgu.de"
 __status__ = "Production"
 
 def create_trainDS(path, p=1, **kwargs):
-    files = glob(path+"/**/*.nii", recursive=True) + glob(path+"/**/*.nii.gz", recursive=True)
-    subjects = []
-    for file in files:
-        subjects.append(tio.Subject(
-                                    im=tio.ScalarImage(file),
-                                    filename=os.path.basename(file),
-                        ))
+    files = glob(f"{path}/**/*.nii", recursive=True) + glob(
+        f"{path}/**/*.nii.gz", recursive=True
+    )
+
+    subjects = [
+        tio.Subject(
+            im=tio.ScalarImage(file),
+            filename=os.path.basename(file),
+        )
+        for file in files
+    ]
+
     moco = MotionCorrupter(**kwargs)
     transforms = [
                     tio.Lambda(moco.perform, p = p)
                 ]
     transform = tio.Compose(transforms)
-    subjects_dataset = tio.SubjectsDataset(subjects, transform=transform)
-    return subjects_dataset
+    return tio.SubjectsDataset(subjects, transform=transform)
 
 def create_trainDS_precorrupt(path_gt, path_corrupt, p=1, norm_mode=0):
-    files = glob(path_gt+"/**/*.nii", recursive=True) + glob(path_gt+"/**/*.nii.gz", recursive=True)
-    subjects = []
-    for file in files:
-        subjects.append(tio.Subject(
-                                    im=tio.ScalarImage(file),
-                                    filename=os.path.basename(file),
-                        ))
+    files = glob(f"{path_gt}/**/*.nii", recursive=True) + glob(
+        f"{path_gt}/**/*.nii.gz", recursive=True
+    )
+
+    subjects = [
+        tio.Subject(
+            im=tio.ScalarImage(file),
+            filename=os.path.basename(file),
+        )
+        for file in files
+    ]
+
     transforms = [
                     ReadCorrupted(path_corrupt=path_corrupt, p=p, norm_mode=norm_mode)
-                    
+
                 ]
     transform = tio.Compose(transforms)
-    subjects_dataset = tio.SubjectsDataset(subjects, transform=transform)
-    return subjects_dataset
+    return tio.SubjectsDataset(subjects, transform=transform)
 
 def createTIODS(path_gt, path_corrupt, is_infer=False, p=1, transforms = [], **kwargs):
-    files_gt = glob(path_gt+"/**/*.nii", recursive=True) + glob(path_gt+"/**/*.nii.gz", recursive=True)
+    files_gt = glob(f"{path_gt}/**/*.nii", recursive=True) + glob(
+        f"{path_gt}/**/*.nii.gz", recursive=True
+    )
+
     if path_corrupt:
-        files_inp = glob(path_corrupt+"/**/*.nii", recursive=True) + glob(path_corrupt+"/**/*.nii.gz", recursive=True)
+        files_inp = glob(f"{path_corrupt}/**/*.nii", recursive=True) + glob(
+            f"{path_corrupt}/**/*.nii.gz", recursive=True
+        )
+
         corruptFly = False
     else:
         files_inp = files_gt.copy()
@@ -63,8 +77,7 @@ def createTIODS(path_gt, path_corrupt, is_infer=False, p=1, transforms = [], **k
 
     for file in files_inp:
         filename = os.path.basename(file)
-        gt_files = [f for f in files_gt if filename in f]
-        if len(gt_files) > 0:
+        if gt_files := [f for f in files_gt if filename in f]:
             gt_path = gt_files[0]
             files_gt.remove(gt_path)
             subjects.append(tio.Subject(
@@ -78,8 +91,7 @@ def createTIODS(path_gt, path_corrupt, is_infer=False, p=1, transforms = [], **k
         moco = MotionCorrupter(**kwargs)
         transforms.append(tio.Lambda(moco.perform, p = p))
     transform = tio.Compose(transforms)
-    subjects_dataset = tio.SubjectsDataset(subjects, transform=transform)
-    return subjects_dataset
+    return tio.SubjectsDataset(subjects, transform=transform)
 
 def __process_TPs(files):
     f_dicts = []
@@ -90,8 +102,8 @@ def __process_TPs(files):
         f_info["filename"] = "_".join(f_parts[f_parts.index(tp)+1:])
         f_info["tp"] = int(tp[2:])
         f_dicts.append(f_info)
-    f_dicts = sorted(f_dicts, key=lambda k: k['tp'])    
-    filenames = list(set(dic["filename"] for dic in f_dicts))
+    f_dicts = sorted(f_dicts, key=lambda k: k['tp'])
+    filenames = list({dic["filename"] for dic in f_dicts})
     return f_dicts, filenames       
 
 class ProcessTIOSubsTPs():
@@ -105,9 +117,15 @@ class ProcessTIOSubsTPs():
         return subject
 
 def createTIODynDS(path_gt, path_corrupt, is_infer=False, p=1, transforms = [], **kwargs):
-    files_gt = glob(path_gt+"/**/*.nii", recursive=True) + glob(path_gt+"/**/*.nii.gz", recursive=True)
+    files_gt = glob(f"{path_gt}/**/*.nii", recursive=True) + glob(
+        f"{path_gt}/**/*.nii.gz", recursive=True
+    )
+
     if path_corrupt:
-        files_inp = glob(path_corrupt+"/**/*.nii", recursive=True) + glob(path_corrupt+"/**/*.nii.gz", recursive=True)
+        files_inp = glob(f"{path_corrupt}/**/*.nii", recursive=True) + glob(
+            f"{path_corrupt}/**/*.nii.gz", recursive=True
+        )
+
         corruptFly = False
     else:
         files_inp = files_gt.copy()
@@ -119,7 +137,7 @@ def createTIODynDS(path_gt, path_corrupt, is_infer=False, p=1, transforms = [], 
     for filename in files_inp:
         inp_files = [d for d in inp_dicts if filename in d['filename']]
         gt_files = [d for d in gt_dicts if filename in d['filename']]
-        tps = list(set(dic["tp"] for dic in inp_files))
+        tps = list({dic["tp"] for dic in inp_files})
         tp_prev = tps.pop(0)
         for tp in tps:
             inp_tp_prev = [d for d in inp_files if tp_prev == d['tp']]
@@ -127,7 +145,7 @@ def createTIODynDS(path_gt, path_corrupt, is_infer=False, p=1, transforms = [], 
             inp_tp = [d for d in inp_files if tp == d['tp']]
             gt_tp = [d for d in gt_files if tp == d['tp']]
             tp_prev = tp
-            if len(gt_tp_prev) > 0 and len(gt_tp) > 0:
+            if gt_tp_prev and gt_tp:
                 subjects.append(tio.Subject(
                                         gt_tp_prev=tio.ScalarImage(gt_tp_prev[0]['path']),
                                         inp_tp_prev=tio.ScalarImage(inp_tp_prev[0]['path']),
@@ -147,13 +165,12 @@ def createTIODynDS(path_gt, path_corrupt, is_infer=False, p=1, transforms = [], 
         transforms.append(tio.Lambda(moco.perform, p = p))
     transforms.append(ProcessTIOSubsTPs())
     transform = tio.Compose(transforms)
-    subjects_dataset = tio.SubjectsDataset(subjects, transform=transform)
-    return subjects_dataset
+    return tio.SubjectsDataset(subjects, transform=transform)
 
 def create_patchDS(train_subs, val_subs, patch_size, patch_qlen, patch_per_vol, inference_strides): 
     train_queue = None
     val_queue = None
-    
+
     if train_subs is not None:
         sampler = tio.data.UniformSampler(patch_size)
         train_queue = tio.Queue(
@@ -183,7 +200,7 @@ class ReadCorrupted(tio.transforms.Transform):
 
     def apply_transform(self, subject):
         corrupted_query = subject.filename.split(".")[0]+"*"
-        files = glob(self.path_corrupt+"/**/"+corrupted_query, recursive=True)
+        files = glob(f"{self.path_corrupt}/**/{corrupted_query}", recursive=True)
         corrupt_path = files[random.randint(0, len(files)-1)]
         transformed, _ = read_image(corrupt_path)
 

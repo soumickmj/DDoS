@@ -48,8 +48,7 @@ class p_y(nn.Module):
         )
 
     def forward(self, input):
-        logits = self.core_nn(input)
-        return logits
+        return self.core_nn(input)
 
 
 
@@ -162,10 +161,7 @@ class p_x(nn.Module):
         z_out = self.z_nn(z)
 
         joint = torch.cat((y_out, z_out), 1)
-        logits = self.core_nn(joint)
-        return logits
+        return self.core_nn(joint)
 
 
 
-if __name__ == "__main__":
-    pass

@@ -62,8 +62,8 @@ def writeSubDF(df, target_df, file_obj, model, groupby, metric_type="Out"):
     file_obj.write("\n----------------------------\n")
 
 def getP(model_df, target_df, metric, metric_type="Out"):
-    pstring = "\n"
     if len(target_df) > 0:
+        pstring = "\n"
         for us in model_df.undersampling.unique():    
             target = target_df[target_df.undersampling==us][metric+metric_type]    
             current = model_df[model_df.undersampling==us][metric+"Out"]    

@@ -58,7 +58,7 @@ class SRCNN3Dv2(nn.Module):
         output_4 = self.conv_4(output_3)
         output_5a = self.conv_5(output_4)
         output_5 = torch.add(output_1, output_5a)
-        
+
         output_6 = output_5
         mod_ind = 0
         for i in range(len(self.scale_factor)):
@@ -69,7 +69,7 @@ class SRCNN3Dv2(nn.Module):
                 suffled_size[1] //= self.scale_factor[i]
                 suffled_size[2+i] *= self.scale_factor[i]
                 output_6 = output_6.view(suffled_size)
-        
+
         output_7 = self.conv_7(output_6)
         output_8 = self.conv_8(output_7)
         output_9a = self.conv_9(output_8)

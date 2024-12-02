@@ -24,13 +24,13 @@ def squeeze_2x2(x, reverse=False, alt_order=False):
 
         if reverse:
             if c % 4 != 0:
-                raise ValueError('Number of channels must be divisible by 4, got {}.'.format(c))
+                raise ValueError(f'Number of channels must be divisible by 4, got {c}.')
             c //= 4
         else:
             if h % 2 != 0:
-                raise ValueError('Height must be divisible by 2, got {}.'.format(h))
+                raise ValueError(f'Height must be divisible by 2, got {h}.')
             if w % 2 != 0:
-                raise ValueError('Width must be divisible by 4, got {}.'.format(w))
+                raise ValueError(f'Width must be divisible by 4, got {w}.')
         # Defines permutation of input channels (shape is (4, 1, 2, 2)).
         squeeze_matrix = torch.tensor([[[[1., 0.], [0., 0.]]],
                                        [[[0., 0.], [0., 1.]]],
@@ -59,13 +59,13 @@ def squeeze_2x2(x, reverse=False, alt_order=False):
 
         if reverse:
             if c % 4 != 0:
-                raise ValueError('Number of channels {} is not divisible by 4'.format(c))
+                raise ValueError(f'Number of channels {c} is not divisible by 4')
             x = x.view(b, h, w, c // 4, 2, 2)
             x = x.permute(0, 1, 4, 2, 5, 3)
             x = x.contiguous().view(b, 2 * h, 2 * w, c // 4)
         else:
             if h % 2 != 0 or w % 2 != 0:
-                raise ValueError('Expected even spatial dims HxW, got {}x{}'.format(h, w))
+                raise ValueError(f'Expected even spatial dims HxW, got {h}x{w}')
             x = x.view(b, h // 2, 2, w // 2, 2, c)
             x = x.permute(0, 1, 3, 5, 2, 4)
             x = x.contiguous().view(b, h // 2, w // 2, c * 4)

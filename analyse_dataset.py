@@ -138,8 +138,8 @@ torch.cuda.manual_seed(args.seed)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
-if __name__ == "__main__" :
-    args.scalefact = tuple(map(int, args.scalefact.replace('(','').replace(')','').split(',')))  
+if __name__ == "__main__":
+    args.scalefact = tuple(map(int, args.scalefact.replace('(','').replace(')','').split(',')))
     args.homepath = os.path.expanduser("~/Documents")
     if args.patchsize:
         args.patchsize = tuple(map(int, args.patchsize.replace('(','').replace(')','').split(',')))
@@ -185,7 +185,7 @@ if __name__ == "__main__" :
     #                         format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
     #                         datefmt='%H:%M:%S',
     #                         level=logging.DEBUG)
-                            
+
     # # transforms = [tio.transforms.RescaleIntensity((0, 1))]
     # transforms = []
 
@@ -253,16 +253,16 @@ if __name__ == "__main__" :
         test_ssim = []
         test_metrics = []        
 
-        for b, (lr_imgs, hr_imgs, start_coords, files, shapes, pad) in enumerate(tqdm(test_loader)):
+        for lr_imgs, hr_imgs, start_coords, files, shapes, pad in tqdm(test_loader):
             lr_imgs = lr_imgs[:,1,...].unsqueeze(1).contiguous().to(device, non_blocking=True)  # (batch_size (N), 3, 24, 24), imagenet-normed
             hr_imgs = hr_imgs.contiguous()#.to(device)  # (batch_size (N), 3, 96, 96), in [-1, 1]
             pad = pad.numpy()
-            
-            lr_imgs = F.interpolate(lr_imgs, size=hr_imgs.shape[2:], mode='trilinear') 
+
+            lr_imgs = F.interpolate(lr_imgs, size=hr_imgs.shape[2:], mode='trilinear')
             tmp_in = lr_imgs.cpu().detach()#.numpy()
             tmp_tar = hr_imgs#.numpy()
 
-            for i in range(hr_imgs.shape[0]):
+            for i in range(tmp_tar.shape[0]):
                 if bool(args.patchsize) and args.patchsize[0] != -1: #TODO: implement non-iso patch-size, now only using the first element
                     if files[i] not in results:
                         markers[files[i]] = np.zeros(shapes[i][0].numpy())
@@ -287,13 +287,12 @@ if __name__ == "__main__" :
                     targets[files[i]] = np.moveaxis(tmp_tar[i,0,...].squeeze().numpy(), 0, -1)
 
         if bool(args.patchsize) and args.patchsize[0] != -1:
-            for f in inputs.keys():
+            for f in inputs:
                 inputs[f] = np.divide(inputs[f], markers[f])
                 results[f] = np.divide(results[f], markers[f])
                 targets[f] = np.divide(targets[f], markers[f])
 
-        for i, filename in enumerate(results.keys()):
-            out = results[filename]
+        for filename, out in results.items():
             inp = inputs[filename]
             gt = targets[filename]
             metrics = saver.CalcNSave(out, inp, gt, filename, already_numpy=True)
@@ -305,7 +304,7 @@ if __name__ == "__main__" :
                 ssim = round(metrics['SSIMOut'],4)
                 test_ssim.append(ssim)
                 runningSSIM.append(ssim)
-        
-        if len(test_metrics) > 0:
+
+        if test_metrics:
             df = pd.DataFrame.from_dict(test_metrics)
             df.to_csv(os.path.join(save_path, 'Results.csv'), index=False)

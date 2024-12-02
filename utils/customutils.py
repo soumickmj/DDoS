@@ -40,7 +40,7 @@ def createCenterRatioMask(slice, percent, returnNumLinesRemoved=False):
     dim1 = slice.shape[0]
     dim2 = slice.shape[1]
     ratio = dim2/dim1
-    
+
     mask = np.ones(slice.shape)
     dim1_now = dim1
     dim2_should = dim2
@@ -61,7 +61,7 @@ def createCenterRatioMask(slice, percent, returnNumLinesRemoved=False):
 
         currentPercent = np.count_nonzero(mask)/mask.size
 
-   
+
     if returnNumLinesRemoved:
         linesRemoved_dim1 = dim1 - dim1_now
         linesRemoved_dim2 = dim2 - dim2_should
@@ -74,8 +74,7 @@ def performUndersampling(fullImgVol, mask=None, maskmatpath=None, zeropad=True):
     #path will only be used in mask not supplied
     fullKSPVol = fft2c(fullImgVol)
     underKSPVol = performUndersamplingKSP(fullKSPVol, mask, maskmatpath,zeropad)
-    underImgVol = ifft2c(underKSPVol)
-    return underImgVol
+    return ifft2c(underKSPVol)
 
 def performUndersamplingKSP(fullKSPVol, mask=None, maskmatpath=None, zeropad=True):
     #Either send mask, or maskmatpath.
@@ -83,18 +82,16 @@ def performUndersamplingKSP(fullKSPVol, mask=None, maskmatpath=None, zeropad=Tru
     if mask is None:
         mask = sio.loadmat(maskmatpath)['mask']
     if zeropad:
-        underKSPVol = np.multiply(fullKSPVol.transpose((2,0,1)), mask).transpose((1,2,0))
-    else:
-        temp = []
-        for i in range(mask.shape[0]):
-            maskline = mask[i,:]
-            if maskline.any():
-                temp.append(fullKSPVol[i,...])
-        temp = np.array(temp)
-        underKSPVol = []
-        for i in range(mask.shape[1]):
-            maskline = mask[:,i]
-            if maskline.any():
-                underKSPVol.append(temp[:,i,...])
-        underKSPVol = np.array(underKSPVol).swapaxes(0,1)
-    return underKSPVol
+        return np.multiply(fullKSPVol.transpose((2,0,1)), mask).transpose((1,2,0))
+    temp = []
+    for i in range(mask.shape[0]):
+        maskline = mask[i,:]
+        if maskline.any():
+            temp.append(fullKSPVol[i,...])
+    temp = np.array(temp)
+    underKSPVol = []
+    for i in range(mask.shape[1]):
+        maskline = mask[:,i]
+        if maskline.any():
+            underKSPVol.append(temp[:,i,...])
+    return np.array(underKSPVol).swapaxes(0,1)

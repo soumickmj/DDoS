@@ -26,5 +26,3 @@ class StandardNormal:
       return "StandardNormal"
 
 
-if __name__ == "__main__":
-    pass

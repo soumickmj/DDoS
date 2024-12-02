@@ -79,10 +79,8 @@ class UNet(nn.Module):
 class UNetConvBlock(nn.Module):
     def __init__(self, in_size, out_size, padding, batch_norm):
         super(UNetConvBlock, self).__init__()
-        block = []
+        block = [nn.Conv3d(in_size, out_size, kernel_size=3, padding=int(padding))]
 
-        block.append(nn.Conv3d(in_size, out_size, kernel_size=3,
-                               padding=int(padding)))
         block.append(nn.ReLU())
         if batch_norm:
             block.append(nn.BatchNorm3d(out_size))
@@ -96,8 +94,7 @@ class UNetConvBlock(nn.Module):
         self.block = nn.Sequential(*block)
 
     def forward(self, x):
-        out = self.block(x)
-        return out
+        return self.block(x)
 
 
 class UNetUpBlock(nn.Module):

@@ -54,7 +54,7 @@ for csv in tqdm(results_csvs):
                 df.loc[df.file==f, "DiffOut"] = diff_out_std
         except:
             pass
-        
+
         try:
             outpath = glob(csv.replace(".csv",f"/{f}/out.nii*"))[0]
             out = MinMax(nib.load(outpath).get_fdata())
